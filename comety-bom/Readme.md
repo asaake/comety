@@ -12,7 +12,7 @@ cometyの親プロジェクトです
 
 #### Tomcat Managerの設定
   
-	Manager URL: http://localhost:8080/manager/html
+    Manager URL: http://localhost:8080/manager/html
 
 #### Tomcat Usersの設定
 
@@ -34,8 +34,11 @@ conf/tomcat-users.xml に以下を追加
 * ServerのプロパティのGeneral Information のOpen launch configurationをクリック
   * Argumentsタブをクリック
   * VM argumentsの最後に以下を追加
-  * `-Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=8089`
-  
+
+```
+-Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false  -Dcom.sun.management.jmxremote.port=8089`
+```
+
 ## Eclipseでのプロファイル選択
 
 * 自身のプロジェクトを右クリック
