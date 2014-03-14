@@ -4,10 +4,10 @@ comety-apiを使用して作成したチャットのサンプルプロジェク�
 各種設定についてはcomety-bomを参照してください
 
 デプロイして下記にアクセスしてください。  
-[チャットアリケーションのページ](http://localhost:8080/comety-chat-example/jsp/chat.jsp)
+[http://localhost:8080/comety-chat-example/jsp/chat.jsp](http://localhost:8080/comety-chat-example/jsp/chat.jsp)
 
 # プロファイル
-test, arquillian-remote, arquillian-managedが使用可能です
+test, arquillian-remote, arquillian-managedが使用可能です  
 eclipseで開発する際はprofileの設定にtestを含めてください
 
 # コンパイル
