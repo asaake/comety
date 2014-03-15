@@ -8,9 +8,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>comety-integration-test</artifactId>
 	<packaging>war</packaging>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>com.comety</groupId>
