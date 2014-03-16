@@ -6,7 +6,7 @@
 
     <container qualifier="tomcat-remote-7" default="true">
         <configuration>
-        	<property name="catalinaHome">${env.TOMCAT_HOME}</property>
+            <property name="catalinaHome">${env.TOMCAT_HOME}</property>
             <property name="jmxPort">8089</property>
             <property name="httpPort">8080</property>
             <property name="user">arquillian</property>

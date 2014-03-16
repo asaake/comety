@@ -16,6 +16,9 @@ mvn clean package -P arquillian-managed
 # テストの実行のみキャンセル
 mvn clean package -P arquillian-managed -DskipTests=true
 
+# 忘れがち
+chromedriverに実行権限を付与する
+
 # パッチ
 ShrinkwrapのMavenImporterで文字コードを読み込まないため
 CompilerPluginConfigurationを上書きしています

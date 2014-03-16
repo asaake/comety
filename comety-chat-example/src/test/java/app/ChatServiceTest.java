@@ -23,88 +23,84 @@ import com.comety.servlet.CometySession;
 
 public class ChatServiceTest {
 
-	@Tested
-	ChatService chatService;
-	
-	@Test(expected=CometyInValidConnectParametersException.class)
-	public void 接続必須パラメータチェックで必須パラメータがない場合に例外が発生する() {
-		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
-		chatService.validateConnectParameters(parameters);
-	}
-	
-	@Test
-	public void 接続必須パラメータチェックでに必須パラメータがある場合はなにもしない() {
-		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
-		List<String> param = new ArrayList<String>();
-		param.add("test");
-		parameters.put("name", param);
-		chatService.validateConnectParameters(parameters);
-	}
+    @Tested
+    ChatService chatService;
 
-	@Test
-	public void 管理者メッセージが作成できる() {
-		String message = "testMessage";
-		Map<String, String> data = chatService.createMessage("testMessage");
-		assertEquals(ChatService.SYSTEM_SESSION_ID, data.get("sessionId"));
-		assertEquals(ChatService.SYSTEM_NAME, data.get("name"));
-		assertEquals(message, data.get("message"));
-	}
+    @Test(expected = CometyInValidConnectParametersException.class)
+    public void 接続必須パラメータチェックで必須パラメータがない場合に例外が発生する() {
+        Map<String, List<String>> parameters = new HashMap<>();
+        chatService.validateConnectParameters(parameters);
+    }
 
-	@Test
-	public void ユーザーメッセージが作成できる(final @Mocked CometySession session) {
+    @Test
+    public void 接続必須パラメータチェックでに必須パラメータがある場合はなにもしない() {
+        Map<String, List<String>> parameters = new HashMap<>();
+        List<String> param = new ArrayList<>();
+        param.add("test");
+        parameters.put("name", param);
+        chatService.validateConnectParameters(parameters);
+    }
 
-		final String sessionId = "1";
-		final String name = "testuser";
-		final String message = "testMessage";
+    @Test
+    public void 管理者メッセージが作成できる() {
+        String message = "testMessage";
+        Map<String, String> data = chatService.createMessage("testMessage");
+        assertEquals(ChatService.SYSTEM_SESSION_ID, data.get("sessionId"));
+        assertEquals(ChatService.SYSTEM_NAME, data.get("name"));
+        assertEquals(message, data.get("message"));
+    }
 
-		new NonStrictExpectations() {
-			{
-				session.getSessionId();
-				result = sessionId;
-				session.getParameter("name");
-				result = name;
-			}
-		};
+    @Test
+    public void ユーザーメッセージが作成できる(final @Mocked CometySession session) {
 
-		Map<String, String> data = chatService.createMessage(session, message);
-		assertEquals(sessionId, data.get("sessionId"));
-		assertEquals(name, data.get("name"));
-		assertEquals(message, data.get("message"));
-	}
+        final String sessionId = "1";
+        final String name = "testuser";
+        final String message = "testMessage";
 
-	@Test
-	public void 接続ユーザー全員にメッセージを送信できる() {
+        new NonStrictExpectations() {{
+            session.getSessionId(); result = sessionId;
+            session.getParameter("name"); result = name;
+        }};
 
-		// モック作成
-		final List<String> sendedSessionIds = new ArrayList<String>();
-		new MockUp<CometySession>() {
-			@Mock
-			public void sendMessage(Invocation invocation, String message) {
-				CometySession session = invocation.getInvokedInstance();
-				if (sendedSessionIds.contains(session.getSessionId())) {
-					fail("２重送信されている");
-				} else {
-					sendedSessionIds.add(session.getSessionId());
-				}
-			}
-		};
+        Map<String, String> data = chatService.createMessage(session, message);
+        assertEquals(sessionId, data.get("sessionId"));
+        assertEquals(name, data.get("name"));
+        assertEquals(message, data.get("message"));
+    }
 
-		// セッション作成
-		String[] sessionIds = new String[] { "1", "2", "3", "4", "5" };
-		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
-		for (String sessionId : sessionIds) {
-			CometySession.createSession(chatService, sessionId, parameters);
-		}
+    @Test
+    public void 接続ユーザー全員にメッセージを送信できる() {
 
-		// メッセージ送信
-		Map<String, String> data = chatService.createMessage("testMessage");
-		chatService.sendBloadCastMessage(data);
+        // モック作成
+        final List<String> sendedSessionIds = new ArrayList<>();
+        new MockUp<CometySession>() {
+            @Mock
+            public void sendMessage(Invocation invocation, String message) {
+                CometySession session = invocation.getInvokedInstance();
+                if (sendedSessionIds.contains(session.getSessionId())) {
+                    fail("２重送信されている");
+                } else {
+                    sendedSessionIds.add(session.getSessionId());
+                }
+            }
+        };
 
-		// 検証
-		for (String sessionId : sessionIds) {
-			assertTrue(sendedSessionIds.contains(sessionId));
-		}
+        // セッション作成
+        String[] sessionIds = new String[]{"1", "2", "3", "4", "5"};
+        Map<String, List<String>> parameters = new HashMap<>();
+        for (String sessionId : sessionIds) {
+            CometySession.createSession(chatService, sessionId, parameters);
+        }
 
-	}
+        // メッセージ送信
+        Map<String, String> data = chatService.createMessage("testMessage");
+        chatService.sendBloadCastMessage(data);
+
+        // 検証
+        for (String sessionId : sessionIds) {
+            assertTrue(sendedSessionIds.contains(sessionId));
+        }
+
+    }
 
 }

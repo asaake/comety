@@ -9,14 +9,14 @@ import com.comety.filter.CometyEncodingFilter;
  * チャットシステムのエンコーディングフィルタ
  */
 @WebFilter(
-		asyncSupported=true,
-		initParams={
-			@WebInitParam(name="encoding", value="utf-8")	
-		},
-		urlPatterns={
-			"/*"
-		}
-	)
+        asyncSupported = true,
+        initParams = {
+            @WebInitParam(name = "encoding", value = "utf-8")
+        },
+        urlPatterns = {
+            "/*"
+        }
+)
 public class ChatEncodingFilter extends CometyEncodingFilter {
 
 }
