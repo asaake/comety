@@ -42,113 +42,122 @@ import com.google.common.base.Predicate;
 @RunWith(Arquillian.class)
 public class IntegrationSelenuimTest {
 
-	private static final Log log = LogFactory
-			.getLog(IntegrationSelenuimTest.class);
+    private static final Log log = LogFactory
+            .getLog(IntegrationSelenuimTest.class);
 
-	private static final String CHROME_DRIVER = "src/test/resources/chromedriver_win32/chromedriver.exe";
+    private static final String CHROME_DRIVER_DIR = "src/test/resources";
 
-	private static final String SERVER_HOST = "http://localhost:8080";
+    private static final String SERVER_HOST = "http://localhost:8080";
 
-	private static final String CONTEXT_NAME = "comety-integration-test-test";
+    private static final String CONTEXT_NAME = "comety-integration-test-test";
 
-	private static final String TEST_TARGET = "integration-test.html";
+    private static final String TEST_TARGET = "integration-test.html";
 
-	private static ChromeDriverService service;
+    private static ChromeDriverService service;
 
-	private WebDriver driver;
+    private WebDriver driver;
 
-	@Deployment
-	public static WebArchive createDeployment() {
-		
-		// POMの設定からWARを作成
-		InputStream zipStream = ShrinkWrap
-			.create(MavenImporter.class)
-			.loadPomFromFile("pom.xml")
-			.importBuildOutput()
-			.as(ZipExporter.class)
-			.exportAsInputStream();
-		
-		WebArchive archive = ShrinkWrap
-				.create(ZipImporter.class, CONTEXT_NAME + ".war")
-				.importFrom(zipStream)
-				.as(WebArchive.class);
-				
-		log.debug(archive.toString(true));
-		return archive;
-	}
+    @Deployment
+    public static WebArchive createDeployment() {
 
-	@BeforeClass
-	public static void createAndStartService() throws IOException {
-		service = new ChromeDriverService.Builder()
-				.usingDriverExecutable(new File(CHROME_DRIVER))
-				.usingAnyFreePort().build();
-		service.start();
-	}
+        // POMの設定からWARを作成
+        InputStream zipStream = ShrinkWrap
+                .create(MavenImporter.class)
+                .loadPomFromFile("pom.xml")
+                .importBuildOutput()
+                .as(ZipExporter.class)
+                .exportAsInputStream();
 
-	@AfterClass
-	public static void createAndStopService() {
-		service.stop();
-	}
+        WebArchive archive = ShrinkWrap
+                .create(ZipImporter.class, CONTEXT_NAME + ".war")
+                .importFrom(zipStream)
+                .as(WebArchive.class);
 
-	@Before
-	public void createDriver() {
-		driver = new RemoteWebDriver(service.getUrl(),
-				DesiredCapabilities.chrome());
-	}
+        log.debug(archive.toString(true));
+        return archive;
+    }
 
-	@After
-	public void quitDriver() {
-		driver.quit();
-	}
+    @BeforeClass
+    public static void createAndStartService() throws IOException {
+        String osName = System.getProperty("os.name").toLowerCase();
+        String chromeDriver;
+        if (osName.startsWith("win")) {
+            chromeDriver = CHROME_DRIVER_DIR + "/chromedriver_win32/chromedriver.exe";
+        } else if (osName.startsWith("mac")) {
+            chromeDriver = CHROME_DRIVER_DIR + "/chromedriver_mac32/chromedriver";
+        } else {
+            throw new RuntimeException("unknown os");
+        }
+        service = new ChromeDriverService.Builder()
+                .usingDriverExecutable(new File(chromeDriver))
+                .usingAnyFreePort().build();
+        service.start();
+    }
 
-	@Test
-	@RunAsClient
-	public void Mochaの結果が成功していること() throws InterruptedException, JSONException {
-		final WebDriverWait wait = new WebDriverWait(driver, 500, 100);
-		final JavascriptExecutor js = (JavascriptExecutor) driver;
+    @AfterClass
+    public static void createAndStopService() {
+        service.stop();
+    }
 
-		String url = SERVER_HOST + "/" + CONTEXT_NAME + "/" + TEST_TARGET;
-		driver.get(url);
+    @Before
+    public void createDriver() {
+        driver = new RemoteWebDriver(service.getUrl(),
+                DesiredCapabilities.chrome());
+    }
 
-		wait.until(new Predicate<WebDriver>() {
-			@Override
-			public boolean apply(WebDriver arg0) {
-				return js.executeScript("return document.readyState;").equals(
-						"complete");
-			}
-		});
+    @After
+    public void quitDriver() {
+        driver.quit();
+    }
 
-		wait.until(new Predicate<WebDriver>() {
-			@Override
-			public boolean apply(WebDriver arg0) {
-				try {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> response = (Map<String, Object>) js
-							.executeScript("return mocha.tapResult");
-					if (response.get("isEnd") == null) {
-						return false;
-					}
-					return (boolean) response.get("isEnd");
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		});
+    @Test
+    @RunAsClient
+    public void Mochaの結果が成功していること() throws InterruptedException, JSONException {
+        final WebDriverWait wait = new WebDriverWait(driver, 500, 100);
+        final JavascriptExecutor js = (JavascriptExecutor) driver;
 
-		@SuppressWarnings("unchecked")
-		Map<String, Object> response = (Map<String, Object>) js
-				.executeScript("return mocha.tapResult");
+        String url = SERVER_HOST + "/" + CONTEXT_NAME + "/" + TEST_TARGET;
+        driver.get(url);
 
-		@SuppressWarnings("unchecked")
-		List<String> logs = (List<String>) response.get("logs");
-		String tapResult = StringUtils.join(logs, "\n");
-		log.info(tapResult);
+        wait.until(new Predicate<WebDriver>() {
+            @Override
+            public boolean apply(WebDriver arg0) {
+                return js.executeScript("return document.readyState;").equals(
+                        "complete");
+            }
+        });
 
-		TapConsumer consumer = TapConsumerFactory.makeTap13Consumer();
-		TestSet testSet = consumer.load(tapResult);
-		assertFalse("Mochaのテスト結果が失敗でした。\n" + url + "を確認してください。\n" + tapResult,
-				testSet.containsNotOk());
+        wait.until(new Predicate<WebDriver>() {
+            @Override
+            public boolean apply(WebDriver arg0) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> response = (Map<String, Object>) js
+                            .executeScript("return mocha.tapResult");
+                    if (response.get("isEnd") == null) {
+                        return false;
+                    }
+                    return (boolean) response.get("isEnd");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
 
-	}
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = (Map<String, Object>) js
+                .executeScript("return mocha.tapResult");
+
+        @SuppressWarnings("unchecked")
+        List<String> logs = (List<String>) response.get("logs");
+        String tapResult = StringUtils.join(logs, "\n");
+        log.info(tapResult);
+
+        TapConsumer consumer = TapConsumerFactory.makeTap13Consumer();
+        TestSet testSet = consumer.load(tapResult);
+        assertFalse("Mochaのテスト結果が失敗でした。\n" + url + "を確認してください。\n" + tapResult,
+                testSet.containsNotOk());
+
+    }
 
 }

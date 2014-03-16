@@ -13,6 +13,9 @@ comety-apiのインテグレーションテストを行うためのプロジェ�
 ## コンパイル
 mvn clean package -P arquillian-managed
 
+# 忘れがち
+chromedriverに実行権限を付与する
+
 # パッチ
 ShrinkwrapのMavenImporterで文字コードを読み込まないため
 CompilerPluginConfigurationを上書きしています
