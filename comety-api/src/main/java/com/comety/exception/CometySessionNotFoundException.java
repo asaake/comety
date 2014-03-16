@@ -5,16 +5,18 @@ package com.comety.exception;
  */
 public class CometySessionNotFoundException extends CometyException {
 
-	/** SID */
-	private static final long serialVersionUID = 1L;
+    /**
+     * SID
+     */
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * このクラスをインスタンス化する
-	 * 
-	 * @param sessionId セッションID
-	 */
-	public CometySessionNotFoundException(String sessionId) {
-		super("sessionId [" + sessionId + "] is not found.");
-	}
+    /**
+     * このクラスをインスタンス化する
+     *
+     * @param sessionId セッションID
+     */
+    public CometySessionNotFoundException(String sessionId) {
+        super("sessionId [" + sessionId + "] is not found.");
+    }
 
 }

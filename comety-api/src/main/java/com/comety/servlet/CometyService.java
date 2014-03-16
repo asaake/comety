@@ -63,188 +63,208 @@ public class ExampleService extends CometyService {
  </pre>
  */
 public abstract class CometyService {
-	
-	/** セッションIDのシーケンス */
-	protected static int seqSessionId = 1;
-	
-	/** メッセージステータス */
-	public static final String HEADER = "comety-status";
-	
-	/** メッセージステータス: メッセージ送信 */
-	public static final String MESSAGE = "message";
-	
-	/** メッセージステータス: タイムアウト */
-	public static final String TIMEOUT = "timeout";
-	
-	/** メッセージステータス: オープン */
-	public static final String OPEN = "open";
-	
-	/** メッセージステータス : クローズ */
-	public static final String CLOSE = "close";
-	
-	/** メッセージのデフォルトエンコーディング */
-	public static final String DEFAULT_ENCODING = "utf-8";
-	
-	/** メッセージのデフォルトコンテンツタイプ */
-	public static final String DEFAULT_CONTENT_TYPE = "text/plain";
-	
-	/** メッセージのデフォルトタイムアウト */
-	public static final long DEFAULT_TIMEOUT = 5000;
-	
-	/** コメットサービスの設定 */
-	protected static CometyServiceInfo cometyServiceInfo;
-	
-	/**
-	 * このクラスをインスタンス化する
-	 */
-	public CometyService() {
-		if (cometyServiceInfo == null) {
-			cometyServiceInfo = createCometyServiceInfo();
-		}
-	}
-	
-	/**
-	 * コメットサービスの設定を取得します
-	 * 
-	 * @return コメットサービスの設定
-	 */
-	public CometyServiceInfo getCometyServiceInfo() {
-		return cometyServiceInfo;
-	}
-	
-	/**
-	 * コメットサービスの設定を作成します
-	 * 独自の設定が必要な場合はこのメソッドをオーバーライドする
-	 */
-	public CometyServiceInfo createCometyServiceInfo() {
-		CometyServiceInfo cometyServiceInfo = new CometyServiceInfo();
-		cometyServiceInfo.setEncoding(DEFAULT_ENCODING);
-		cometyServiceInfo.setContentType(DEFAULT_CONTENT_TYPE);
-		cometyServiceInfo.setTimeout(DEFAULT_TIMEOUT);
-		return cometyServiceInfo;
-	}
-	
-	/**
-	 * コメットサービスのセッションIDを作成します
-	 * 独自のセッションIDを発行する場合はこのメソッドをオーバライドする
-	 * 
-	 * @return セッションID
-	 */
-	public synchronized String createSessionId() {
-		return String.valueOf(seqSessionId++);
-	}
-	
-	/**
-	 * 接続時のパラメータを検証する
-	 * 
-	 * @param parameters パラメータの一覧
-	 * @throws CometyInValidConnectParametersException 検証が失敗した場合の例外
-	 */
-	abstract public void validateConnectParameters(Map<String, List<String>> parameters) throws CometyInValidConnectParametersException; 
-	
-	/**
-	 * オープン時に呼び出されるイベントハンドラ
-	 * 
-	 * @param session セッション
-	 */
-	abstract public void onOpen(CometySession session);
-	
-	/**
-	 * クローズ時に呼び出されるイベントハンドラ
-	 * ※このメソッド終了後にセッションは閉じられます
-	 * 
-	 * @param session セッション
-	 * @param isForceClose 強制切断かどうか
-	 */
-	abstract public void onClose(CometySession session, boolean isForceClose);
-	
-	/**
-	 * メッセージを受け取った時にに呼び出されるイベントハンドラ
-	 * 
-	 * @param session セッション
-	 * @param message メッセージ
-	 */
-	abstract public void onMessage(CometySession session, String message);
-	
-	/**
-	 * 初回の接続時にセッションIDを発行するメソッド
-	 * 
-	 * @return セッションID
-	 */
-	@POST
-	@Path("/connect")
-	public String connect(MultivaluedMap<String, String> parameters) {
-		validateConnectParameters(parameters);
-		String sessionId = createSessionId();
-		CometySession session = CometySession.createSession(this, sessionId, parameters);
-		return session.getSessionId();
-	}
-	
-	/**
-	 * オープン時に呼び出されるメソッド
-	 * 
-	 * @param sessionId セッションID
-	 */
-	@POST
-	@Path("/open")
-	public void open(@FormParam("sessionId") String sessionId) {
-		CometySession session = CometySession.getSession(sessionId);
-		session.sendOpenMessage(session.getSessionId());
-		onOpen(session);
-	}	
-	
-	/**
-	 * クローズ時に呼び出されるメソッド
-	 * 
-	 * @param sessionId セッションID
-	 * @param isForceClose 強制切断かどうか
-	 */
-	@POST
-	@Path("/close")
-	public void close(@FormParam("sessionId") String sessionId) {
-		close(sessionId, false);
-	}
-	
-	/**
-	 * クローズ時に呼び出されるメソッド
-	 * @param sessionId セッションID
-	 * @param isForceClose 強制切断かどうか
-	 */
-	public void close(@FormParam("sessionId") String sessionId, boolean isForceClose) {
-		CometySession session = CometySession.getSession(sessionId);
-		onClose(session, isForceClose);
-		if (isForceClose) {
-			session.close();
-		} else {
-			session.sendCloseMessage(session.getSessionId());
-		}
-	}
-	
-	/**
-	 * クライアントからメッセージを送信するために呼び出されるメソッド
-	 * 
-	 * @param sessionId セッションID
-	 * @param message メッセージ
-	 */
-	@POST
-	@Path("/message")
-	public void sendMessage(@FormParam("sessionId") String sessionId,
-			@FormParam("message") String message) {
-		CometySession session = CometySession.getSession(sessionId);
-		onMessage(session, message);
-	}
-	
-	/**
-	 * ポーリングを維持するメソッド
-	 * 
-	 * @param request　リクエスト
-	 * @param sessionId セッションID
-	 */
-	@POST
-	@Path("/polling")
-	public void polling(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId) {
-		final CometySession session = CometySession.getSession(sessionId);
-		session.startPolling(request);
-	}
+
+    /**
+     * セッションIDのシーケンス
+     */
+    protected static int seqSessionId = 1;
+
+    /**
+     * メッセージステータス
+     */
+    public static final String HEADER = "comety-status";
+
+    /**
+     * メッセージステータス: メッセージ送信
+     */
+    public static final String MESSAGE = "message";
+
+    /**
+     * メッセージステータス: タイムアウト
+     */
+    public static final String TIMEOUT = "timeout";
+
+    /**
+     * メッセージステータス: オープン
+     */
+    public static final String OPEN = "open";
+
+    /**
+     * メッセージステータス : クローズ
+     */
+    public static final String CLOSE = "close";
+
+    /**
+     * メッセージのデフォルトエンコーディング
+     */
+    public static final String DEFAULT_ENCODING = "utf-8";
+
+    /**
+     * メッセージのデフォルトコンテンツタイプ
+     */
+    public static final String DEFAULT_CONTENT_TYPE = "text/plain";
+
+    /**
+     * メッセージのデフォルトタイムアウト
+     */
+    public static final long DEFAULT_TIMEOUT = 5000;
+
+    /**
+     * コメットサービスの設定
+     */
+    protected static CometyServiceInfo cometyServiceInfo;
+
+    /**
+     * このクラスをインスタンス化する
+     */
+    public CometyService() {
+        if (cometyServiceInfo == null) {
+            cometyServiceInfo = createCometyServiceInfo();
+        }
+    }
+
+    /**
+     * コメットサービスの設定を取得します
+     *
+     * @return コメットサービスの設定
+     */
+    public CometyServiceInfo getCometyServiceInfo() {
+        return cometyServiceInfo;
+    }
+
+    /**
+     * コメットサービスの設定を作成します 独自の設定が必要な場合はこのメソッドをオーバーライドする
+     * 
+     * @return コメットサービスの設定
+     */
+    public CometyServiceInfo createCometyServiceInfo() {
+        CometyServiceInfo info = new CometyServiceInfo();
+        info.setEncoding(DEFAULT_ENCODING);
+        info.setContentType(DEFAULT_CONTENT_TYPE);
+        info.setTimeout(DEFAULT_TIMEOUT);
+        return info;
+    }
+
+    /**
+     * コメットサービスのセッションIDを作成します 独自のセッションIDを発行する場合はこのメソッドをオーバライドする
+     *
+     * @return セッションID
+     */
+    public synchronized String createSessionId() {
+        return String.valueOf(seqSessionId++);
+    }
+
+    /**
+     * 接続時のパラメータを検証する
+     *
+     * @param parameters パラメータの一覧
+     * @throws CometyInValidConnectParametersException 検証が失敗した場合の例外
+     */
+    abstract public void validateConnectParameters(Map<String, List<String>> parameters) throws CometyInValidConnectParametersException;
+
+    /**
+     * オープン時に呼び出されるイベントハンドラ
+     *
+     * @param session セッション
+     */
+    abstract public void onOpen(CometySession session);
+
+    /**
+     * クローズ時に呼び出されるイベントハンドラ ※このメソッド終了後にセッションは閉じられます
+     *
+     * @param session セッション
+     * @param isForceClose 強制切断かどうか
+     */
+    abstract public void onClose(CometySession session, boolean isForceClose);
+
+    /**
+     * メッセージを受け取った時にに呼び出されるイベントハンドラ
+     *
+     * @param session セッション
+     * @param message メッセージ
+     */
+    abstract public void onMessage(CometySession session, String message);
+
+    /**
+     * 初回の接続時にセッションIDを発行するメソッド
+     *
+     * @param parameters フォームパラメータ
+     * @return セッションID
+     */
+    @POST
+    @Path("/connect")
+    public String connect(MultivaluedMap<String, String> parameters) {
+        validateConnectParameters(parameters);
+        String sessionId = createSessionId();
+        CometySession session = CometySession.createSession(this, sessionId, parameters);
+        return session.getSessionId();
+    }
+
+    /**
+     * オープン時に呼び出されるメソッド
+     *
+     * @param sessionId セッションID
+     */
+    @POST
+    @Path("/open")
+    public void open(@FormParam("sessionId") String sessionId) {
+        CometySession session = CometySession.getSession(sessionId);
+        session.sendOpenMessage(session.getSessionId());
+        onOpen(session);
+    }
+
+    /**
+     * クローズ時に呼び出されるメソッド
+     *
+     * @param sessionId セッションID
+     */
+    @POST
+    @Path("/close")
+    public void close(@FormParam("sessionId") String sessionId) {
+        close(sessionId, false);
+    }
+
+    /**
+     * クローズ時に呼び出されるメソッド
+     *
+     * @param sessionId セッションID
+     * @param isForceClose 強制切断かどうか
+     */
+    public void close(@FormParam("sessionId") String sessionId, boolean isForceClose) {
+        CometySession session = CometySession.getSession(sessionId);
+        onClose(session, isForceClose);
+        if (isForceClose) {
+            session.close();
+        } else {
+            session.sendCloseMessage(session.getSessionId());
+        }
+    }
+
+    /**
+     * クライアントからメッセージを送信するために呼び出されるメソッド
+     *
+     * @param sessionId セッションID
+     * @param message メッセージ
+     */
+    @POST
+    @Path("/message")
+    public void sendMessage(@FormParam("sessionId") String sessionId,
+            @FormParam("message") String message) {
+        CometySession session = CometySession.getSession(sessionId);
+        onMessage(session, message);
+    }
+
+    /**
+     * ポーリングを維持するメソッド
+     *
+     * @param request　リクエスト
+     * @param sessionId セッションID
+     */
+    @POST
+    @Path("/polling")
+    public void polling(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId) {
+        final CometySession session = CometySession.getSession(sessionId);
+        session.startPolling(request);
+    }
 
 }

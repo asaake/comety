@@ -5,16 +5,18 @@ package com.comety.exception;
  */
 public class CometyCallOnlyOnceException extends CometyException {
 
-	/** SID */
-	private static final long serialVersionUID = 1L;
-	
-	/**
-	 * このクラスをインスタンス化する
-	 * 
-	 * @param sessionId セッションID
-	 */
-	public CometyCallOnlyOnceException(String name) {
-		super(name + " call only once.");
-	}
+    /**
+     * SID
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * このクラスをインスタンス化する
+     *
+     * @param name 名前
+     */
+    public CometyCallOnlyOnceException(String name) {
+        super(name + " call only once.");
+    }
 
 }

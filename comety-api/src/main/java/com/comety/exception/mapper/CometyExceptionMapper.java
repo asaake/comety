@@ -11,13 +11,13 @@ import com.comety.exception.CometyException;
  */
 abstract public class CometyExceptionMapper implements ExceptionMapper<CometyException> {
 
-	@Override
-	public Response toResponse(CometyException exception) {
-		return Response
-				.status(500)
-				.type(MediaType.TEXT_PLAIN)
-				.entity(exception.getMessage())
-				.build();
-	}
+    @Override
+    public Response toResponse(CometyException exception) {
+        return Response
+                .status(500)
+                .type(MediaType.TEXT_PLAIN)
+                .entity(exception.getMessage())
+                .build();
+    }
 
 }
